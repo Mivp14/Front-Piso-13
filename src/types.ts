@@ -1,17 +1,31 @@
 export interface Producto {
-  id: string;
+  _id: string;
   nombre: string;
   descripcion: string;
   cantidad: number;
+  precio: number;
   ubicacion: string;
   categoria: string;
-  precio: number;
-  fechaIngreso: string;
+  rack: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type ProductoFormData = Omit<Producto, 'id' | 'fechaIngreso'>;
+export interface ProductoFormData {
+  nombre: string;
+  descripcion: string;
+  cantidad: number;
+  precio: number;
+  ubicacion: string;
+  categoria: string;
+  rack: string;
+}
 
 export interface Rack {
-  id: number;
+  _id: string;
   nombre: string;
+  descripcion?: string;
+  ubicacion?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

@@ -1,3 +1,61 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Estilos base para selectores */
+select {
+  background-position: right 0.75rem center !important;
+  cursor: pointer;
+}
+
+select option {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+/* Estilos para modo oscuro */
+.dark select option {
+  background-color: #374151;
+  color: white;
+}
+
+/* Estilos para modo claro */
+select option {
+  background-color: white;
+  color: #111827;
+}
+
+/* Estilos para móviles */
+@media (max-width: 640px) {
+  select {
+    font-size: 16px !important;
+  }
+
+  select option {
+    font-size: 16px !important;
+    padding: 1rem !important;
+    min-height: 3rem !important;
+  }
+}
+
+/* Estilos para PC */
+@media (min-width: 641px) {
+  select option {
+    padding: 0.5rem 1rem;
+    min-height: 2.5rem;
+  }
+
+  select option:hover {
+    background-color: #60A5FA;
+    color: white;
+  }
+}
+
+/* Estilos específicos para iOS */
+@supports (-webkit-touch-callout: none) {
+  select {
+    padding-right: 2rem !important;
+  }
+}
