@@ -49,27 +49,27 @@ export interface ProductoFormData {
 export const api = {
   // Operaciones de Productos
   getProductos: async (): Promise<Producto[]> => {
-    const response = await axios.get(`${API_URL}/products`);
+    const response = await axios.get(`${API_URL}/productos`);
     return response.data;
   },
 
   getProducto: async (id: string): Promise<Producto> => {
-    const response = await axios.get(`${API_URL}/products/${id}`);
+    const response = await axios.get(`${API_URL}/productos/${id}`);
     return response.data;
   },
 
   createProducto: async (producto: ProductoFormData): Promise<Producto> => {
-    const response = await axios.post(`${API_URL}/products`, producto);
+    const response = await axios.post(`${API_URL}/productos`, producto);
     return response.data;
   },
 
   updateProducto: async (id: string, producto: ProductoFormData): Promise<Producto> => {
-    const response = await axios.put(`${API_URL}/products/${id}`, producto);
+    const response = await axios.put(`${API_URL}/productos/${id}`, producto);
     return response.data;
   },
 
   deleteProducto: async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/products/${id}`);
+    await axios.delete(`${API_URL}/productos/${id}`);
   },
 
   // Operaciones de Racks
