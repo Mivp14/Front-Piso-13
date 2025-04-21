@@ -5,7 +5,19 @@ export interface Producto {
   cantidad: number;
   precio: number;
   categoria: string;
-  rack: string;
+  estacion: {
+    _id: string;
+    nombre: string;
+    ubicacion: string;
+  };
+  rack: {
+    _id: string;
+    nombre: string;
+  };
+  bodega: {
+    _id: string;
+    nombre: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -16,7 +28,9 @@ export interface ProductoFormData {
   cantidad: number;
   precio: number;
   categoria: string;
+  estacion: string;
   rack: string;
+  bodega: string;
 }
 
 export interface Rack {

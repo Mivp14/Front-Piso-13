@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Producto, Bodega, Rack } from '../services/api';
+import { Producto, Bodega, Rack, Estacion } from '../services/api';
 import { api } from '../services/api';
 import { Trash2, AlertCircle, Package, Edit, Plus } from 'lucide-react';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -14,9 +14,11 @@ export const ListaProductos: React.FC<ListaProductosProps> = ({ darkMode }) => {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [racks, setRacks] = useState<Rack[]>([]);
+  const [estaciones, setEstaciones] = useState<Estacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [mensaje, setMensaje] = useState<{ tipo: 'success' | 'error', texto: string } | null>(null);
   const [filtros, setFiltros] = useState({
+    estacion: '',
     bodega: '',
     rack: '',
     categoria: '',
@@ -31,14 +33,16 @@ export const ListaProductos: React.FC<ListaProductosProps> = ({ darkMode }) => {
   const cargarDatos = async () => {
     try {
       setLoading(true);
-      const [productosData, bodegasData, racksData] = await Promise.all([
+      const [productosData, bodegasData, racksData, estacionesData] = await Promise.all([
         api.getProductos(),
         api.getBodegas(),
-        api.getRacks()
+        api.getRacks(),
+        api.getEstaciones()
       ]);
       setProductos(productosData);
       setBodegas(bodegasData);
       setRacks(racksData);
+      setEstaciones(estacionesData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -69,23 +73,24 @@ export const ListaProductos: React.FC<ListaProductosProps> = ({ darkMode }) => {
     }
   }, [mensaje]);
 
-  const getUbicacionCompleta = (producto: Producto) => {
-    const bodega = bodegas.find(b => b._id === producto.bodega);
-    const rack = racks.find(r => r._id === producto.rack);
-    if (!bodega || !rack) return 'Ubicación no disponible';
-    const tipoBodega = bodega.esCentral ? 'Central' : 'Secundaria';
-    return `${bodega.nombre} (${tipoBodega}), ${rack.nombre}`;
-  };
-
   const productosFiltrados = productos.filter(producto => {
-    const cumpleBodega = !filtros.bodega || producto.bodega === filtros.bodega;
-    const cumpleRack = !filtros.rack || producto.rack === filtros.rack;
+    const cumpleEstacion = !filtros.estacion || producto.estacion._id === filtros.estacion;
+    const cumpleBodega = !filtros.bodega || producto.bodega._id === filtros.bodega;
+    const cumpleRack = !filtros.rack || producto.rack._id === filtros.rack;
     const terminoBusqueda = filtros.nombre.toLowerCase();
     const cumpleBusqueda = !terminoBusqueda || 
       producto.nombre.toLowerCase().includes(terminoBusqueda) ||
       producto.categoria.toLowerCase().includes(terminoBusqueda);
-    return cumpleBodega && cumpleRack && cumpleBusqueda;
+    return cumpleEstacion && cumpleBodega && cumpleRack && cumpleBusqueda;
   });
+
+  const bodegasFiltradas = bodegas.filter(bodega => 
+    !filtros.estacion || bodega.estacion._id === filtros.estacion
+  );
+
+  const racksFiltrados = racks.filter(rack => 
+    !filtros.bodega || rack.bodega === filtros.bodega
+  );
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -148,31 +153,49 @@ export const ListaProductos: React.FC<ListaProductosProps> = ({ darkMode }) => {
 
       {/* Encabezado con título y botón de agregar */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-        <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+        <h2 className={`text-2xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
           Inventario Actual
         </h2>
         <button
           onClick={() => navigate('/productos/nuevo')}
-          className={`w-full sm:w-auto flex items-center justify-center px-4 py-2 rounded-md ${
-            darkMode
-              ? 'bg-blue-500 hover:bg-blue-600'
-              : 'bg-blue-600 hover:bg-blue-700'
-          } text-white`}
+          className="inline-flex items-center gap-1 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:outline-none"
         >
-          <Plus className="w-5 h-5 mr-2" />
+          <Plus className="w-4 h-4" />
           Agregar Producto
         </button>
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-2 sm:max-w-3xl mx-auto justify-center">
-        <div className="w-full sm:w-48">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:max-w-4xl mx-auto">
+        <div>
+          <label className={`block text-xs font-medium mb-0.5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            Estación
+          </label>
+          <select
+            value={filtros.estacion}
+            onChange={(e) => setFiltros({ ...filtros, estacion: e.target.value, bodega: '', rack: '' })}
+            className={`w-full px-2 py-1.5 text-sm rounded-md border ${
+              darkMode
+                ? 'bg-gray-700 border-gray-600 text-white'
+                : 'bg-white border-gray-300 text-gray-900'
+            }`}
+          >
+            <option value="">Todas las estaciones</option>
+            {estaciones.map((estacion) => (
+              <option key={estacion._id} value={estacion._id}>
+                {estacion.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
           <label className={`block text-xs font-medium mb-0.5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
             Bodega
           </label>
           <select
             value={filtros.bodega}
-            onChange={(e) => setFiltros({ ...filtros, bodega: e.target.value })}
+            onChange={(e) => setFiltros({ ...filtros, bodega: e.target.value, rack: '' })}
             className={`w-full px-2 py-1.5 text-sm rounded-md border ${
               darkMode
                 ? 'bg-gray-700 border-gray-600 text-white'
@@ -180,7 +203,7 @@ export const ListaProductos: React.FC<ListaProductosProps> = ({ darkMode }) => {
             }`}
           >
             <option value="">Todas las bodegas</option>
-            {bodegas.map((bodega) => (
+            {bodegasFiltradas.map((bodega) => (
               <option key={bodega._id} value={bodega._id}>
                 {bodega.nombre}
               </option>
@@ -188,7 +211,7 @@ export const ListaProductos: React.FC<ListaProductosProps> = ({ darkMode }) => {
           </select>
         </div>
 
-        <div className="w-full sm:w-48">
+        <div>
           <label className={`block text-xs font-medium mb-0.5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
             Rack
           </label>
@@ -202,7 +225,7 @@ export const ListaProductos: React.FC<ListaProductosProps> = ({ darkMode }) => {
             }`}
           >
             <option value="">Todos los racks</option>
-            {racks.map((rack) => (
+            {racksFiltrados.map((rack) => (
               <option key={rack._id} value={rack._id}>
                 {rack.nombre}
               </option>
@@ -210,7 +233,7 @@ export const ListaProductos: React.FC<ListaProductosProps> = ({ darkMode }) => {
           </select>
         </div>
 
-        <div className="w-full sm:w-64">
+        <div>
           <label className={`block text-xs font-medium mb-0.5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
             Buscar
           </label>
@@ -250,14 +273,14 @@ export const ListaProductos: React.FC<ListaProductosProps> = ({ darkMode }) => {
                   <th className={`hidden sm:table-cell px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                     Categoría
                   </th>
-                  <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                    Cantidad
+                  <th className={`hidden sm:table-cell px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                    Estación
                   </th>
                   <th className={`hidden sm:table-cell px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                    Precio
+                    Bodega
                   </th>
-                  <th className={`hidden md:table-cell px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                    Ubicación
+                  <th className={`hidden sm:table-cell px-6 py-3 text-left text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
+                    Rack
                   </th>
                   <th className={`px-4 sm:px-6 py-3 text-right text-xs font-medium ${darkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
                     Acciones
@@ -266,24 +289,29 @@ export const ListaProductos: React.FC<ListaProductosProps> = ({ darkMode }) => {
               </thead>
               <tbody className={`divide-y divide-gray-200 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 {productosFiltrados.map((producto) => (
-                  <tr key={producto._id}>
-                    <td className={`px-4 sm:px-6 py-4 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                      <div>{producto.nombre}</div>
-                      <div className="md:hidden text-xs mt-1 text-gray-500">
-                        {getUbicacionCompleta(producto)}
+                  <tr key={producto._id} className={`hover:${darkMode ? 'bg-gray-700' : 'bg-gray-50'} transition-colors duration-200`}>
+                    <td className={`px-4 sm:px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{producto.nombre}</span>
+                        <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} sm:hidden`}>
+                          {producto.categoria}
+                        </span>
+                        <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} sm:hidden`}>
+                          {producto.estacion.nombre} &gt; {producto.bodega.nombre} &gt; {producto.rack.nombre}
+                        </span>
                       </div>
                     </td>
                     <td className={`hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                       {producto.categoria}
                     </td>
-                    <td className={`px-4 sm:px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                      {producto.cantidad}
+                    <td className={`hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                      {producto.estacion.nombre}
                     </td>
                     <td className={`hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                      {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(producto.precio)}
+                      {producto.bodega.nombre}
                     </td>
-                    <td className={`hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                      {getUbicacionCompleta(producto)}
+                    <td className={`hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm ${darkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                      {producto.rack.nombre}
                     </td>
                     <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-right">
                       <div className="flex justify-end space-x-2">

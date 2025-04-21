@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ProductoFormData, Rack, Bodega } from '../services/api';
+import { ProductoFormData, Rack, Bodega, Estacion } from '../services/api';
 import { LoadingSpinner } from './LoadingSpinner';
 import { api } from '../services/api';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -26,40 +26,48 @@ export const ProductoForm: React.FC<ProductoFormProps> = ({
     cantidad: 0,
     precio: 0,
     categoria: '',
+    estacion: '',
     rack: '',
     bodega: ''
   });
 
+  const [estaciones, setEstaciones] = useState<Estacion[]>([]);
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [precioInput, setPrecioInput] = useState('0');
   const [cantidadInput, setCantidadInput] = useState('0');
+  const [estacionSeleccionada, setEstacionSeleccionada] = useState('');
 
   useEffect(() => {
     const cargarDatos = async () => {
       try {
         setLoading(true);
-        const [bodegasData] = await Promise.all([
-          api.getBodegas(),
-          ...(!isNew && id ? [api.getProducto(id)] : [])
+        const [estacionesData, bodegasData] = await Promise.all([
+          api.getEstaciones(),
+          api.getBodegas()
         ]);
         
+        setEstaciones(estacionesData);
         setBodegas(bodegasData);
         
         if (!isNew && id) {
           const producto = await api.getProducto(id);
-          setFormData({
-            nombre: producto.nombre,
-            descripcion: producto.descripcion,
-            cantidad: producto.cantidad,
-            precio: producto.precio,
-            categoria: producto.categoria,
-            rack: producto.rack,
-            bodega: producto.bodega
-          });
-          setPrecioInput(producto.precio.toString());
-          setCantidadInput(producto.cantidad.toString());
+          if (producto) {
+            setEstacionSeleccionada(producto.estacion._id);
+            setFormData({
+              nombre: producto.nombre || '',
+              descripcion: producto.descripcion || '',
+              cantidad: producto.cantidad || 0,
+              precio: producto.precio || 0,
+              categoria: producto.categoria || '',
+              estacion: producto.estacion._id || '',
+              rack: producto.rack._id || '',
+              bodega: producto.bodega._id || ''
+            });
+            setPrecioInput(producto.precio?.toString() || '0');
+            setCantidadInput(producto.cantidad?.toString() || '0');
+          }
         }
       } catch (error) {
         console.error('Error al cargar datos:', error);
@@ -88,6 +96,7 @@ export const ProductoForm: React.FC<ProductoFormProps> = ({
           cantidad: 0,
           precio: 0,
           categoria: '',
+          estacion: '',
           rack: '',
           bodega: ''
         });
@@ -117,6 +126,20 @@ export const ProductoForm: React.FC<ProductoFormProps> = ({
           cantidad: parseInt(value) || 0
         }));
       }
+    } else if (name === 'estacion') {
+      setEstacionSeleccionada(value);
+      setFormData(prev => ({
+        ...prev,
+        estacion: value,
+        bodega: '',
+        rack: ''
+      }));
+    } else if (name === 'bodega') {
+      setFormData(prev => ({
+        ...prev,
+        bodega: value,
+        rack: ''
+      }));
     } else {
       setFormData(prev => ({
         ...prev,
@@ -125,6 +148,7 @@ export const ProductoForm: React.FC<ProductoFormProps> = ({
     }
   };
 
+  const bodegasDisponibles = bodegas.filter(bodega => bodega.estacion._id === estacionSeleccionada);
   const racksDisponibles = racks.filter(rack => rack.bodega === formData.bodega);
 
   if (loading) {
@@ -137,12 +161,14 @@ export const ProductoForm: React.FC<ProductoFormProps> = ({
 
   return (
     <div className="max-w-3xl mx-auto">
-      <form onSubmit={handleSubmit} className={`space-y-4 p-4 sm:p-6 rounded-lg shadow-lg ${
+      <form onSubmit={handleSubmit} className={`space-y-4 p-6 rounded-lg shadow-lg ${
         darkMode ? 'bg-gray-800' : 'bg-white'
       }`}>
-        <h2 className={`text-lg sm:text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-          {isNew ? 'Agregar Nuevo Producto' : 'Editar Producto'}
-        </h2>
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+          <h2 className={`text-2xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            {isNew ? 'Nuevo Producto' : 'Editar Producto'}
+          </h2>
+        </div>
         
         <div>
           <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
@@ -221,7 +247,31 @@ export const ProductoForm: React.FC<ProductoFormProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+              Estación
+            </label>
+            <select
+              name="estacion"
+              value={estacionSeleccionada}
+              onChange={handleChange}
+              required
+              className={`w-full px-3 py-2.5 text-sm rounded-md border appearance-none bg-no-repeat ${
+                darkMode
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            >
+              <option value="">Seleccione una estación</option>
+              {estaciones.map(estacion => (
+                <option key={estacion._id} value={estacion._id}>
+                  {estacion.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div>
             <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
               Bodega
@@ -231,20 +281,15 @@ export const ProductoForm: React.FC<ProductoFormProps> = ({
               value={formData.bodega}
               onChange={handleChange}
               required
+              disabled={!estacionSeleccionada}
               className={`w-full px-3 py-2.5 text-sm rounded-md border appearance-none bg-no-repeat ${
                 darkMode
-                  ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500'
-                  : 'bg-white border-gray-300 text-gray-900 hover:border-gray-400'
-              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200`}
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='${
-                  darkMode ? '%23ffffff' : '%236B7280'
-                }' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                backgroundSize: '1.25em 1.25em'
-              }}
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300 text-gray-900'
+              } ${!estacionSeleccionada ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <option value="">Seleccionar bodega</option>
-              {bodegas.map((bodega) => (
+              <option value="">Seleccione una bodega</option>
+              {bodegasDisponibles.map(bodega => (
                 <option key={bodega._id} value={bodega._id}>
                   {bodega.nombre}
                 </option>
@@ -264,20 +309,12 @@ export const ProductoForm: React.FC<ProductoFormProps> = ({
               disabled={!formData.bodega}
               className={`w-full px-3 py-2.5 text-sm rounded-md border appearance-none bg-no-repeat ${
                 darkMode
-                  ? 'bg-gray-700 border-gray-600 text-white hover:border-gray-500'
-                  : 'bg-white border-gray-300 text-gray-900 hover:border-gray-400'
-              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 ${
-                !formData.bodega ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='${
-                  darkMode ? '%23ffffff' : '%236B7280'
-                }' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                backgroundSize: '1.25em 1.25em'
-              }}
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300 text-gray-900'
+              } ${!formData.bodega ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <option value="">Seleccionar rack</option>
-              {racksDisponibles.map((rack) => (
+              <option value="">Seleccione un rack</option>
+              {racksDisponibles.map(rack => (
                 <option key={rack._id} value={rack._id}>
                   {rack.nombre}
                 </option>
@@ -295,14 +332,14 @@ export const ProductoForm: React.FC<ProductoFormProps> = ({
             value={formData.categoria}
             onChange={handleChange}
             required
-            className={`w-full px-3 py-2 text-sm sm:text-base rounded-md border ${
+            className={`w-full px-3 py-2.5 text-sm rounded-md border appearance-none bg-no-repeat ${
               darkMode
-                ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                ? 'bg-gray-700 border-gray-600 text-white'
+                : 'bg-white border-gray-300 text-gray-900'
             }`}
           >
-            <option value="">Seleccionar categoría</option>
-            {PRODUCT_CATEGORIES.map((categoria) => (
+            <option value="">Seleccione una categoría</option>
+            {PRODUCT_CATEGORIES.map(categoria => (
               <option key={categoria} value={categoria}>
                 {categoria}
               </option>
@@ -310,39 +347,24 @@ export const ProductoForm: React.FC<ProductoFormProps> = ({
           </select>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
+        <div className="flex flex-col sm:flex-row justify-end gap-4">
           <button
             type="button"
             onClick={() => navigate('/productos')}
-            className={`w-full sm:w-auto px-4 py-2 rounded-md ${
+            className={`w-full sm:w-auto px-6 py-2.5 rounded-md text-sm font-medium ${
               darkMode
                 ? 'bg-gray-600 hover:bg-gray-500 text-white'
                 : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
             }`}
           >
-            Volver
+            Cancelar
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`w-full sm:w-auto flex items-center justify-center px-6 py-2 border border-transparent rounded-md shadow-sm text-sm sm:text-base font-medium text-white ${
-              darkMode
-                ? isSubmitting
-                  ? 'bg-blue-400 cursor-not-allowed'
-                  : 'bg-blue-500 hover:bg-blue-600'
-                : isSubmitting
-                  ? 'bg-blue-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
-            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white transition-colors rounded-md bg-blue-600 hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-50"
           >
-            {isSubmitting ? (
-              <>
-                <LoadingSpinner className="mr-2" />
-                {isNew ? 'Agregando...' : 'Guardando...'}
-              </>
-            ) : (
-              isNew ? 'Agregar Producto' : 'Guardar Cambios'
-            )}
+            {isSubmitting ? 'Guardando...' : isNew ? 'Crear Producto' : 'Actualizar Producto'}
           </button>
         </div>
       </form>

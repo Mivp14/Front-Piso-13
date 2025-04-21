@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ProductoForm } from './components/ProductoForm';
 import { ListaProductos } from './components/ListaProductos';
 import { GestionBodegas } from './components/GestionBodegas';
+import { GestionEstaciones } from './components/GestionEstaciones';
+import { InventarioView } from './components/InventarioView';
+import { RackView } from './components/RackView';
 import { Navigation } from './components/Navigation';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { Moon, Sun } from 'lucide-react';
@@ -29,29 +32,31 @@ function App() {
     cargarRacks();
   }, []);
 
-  const handleCreateProducto = async (productoData: ProductoFormData) => {
-    try {
-      await api.createProducto(productoData);
-      window.location.href = '/productos';
-    } catch (error) {
-      console.error('Error al crear producto:', error);
-    }
-  };
+  const AppContent = () => {
+    const navigate = useNavigate();
 
-  const handleUpdateProducto = async (productoData: ProductoFormData) => {
-    try {
-      const id = window.location.pathname.split('/').pop();
-      if (id) {
-        await api.updateProducto(id, productoData);
-        window.location.href = '/productos';
+    const handleCreateProductoWithNavigate = async (productoData: ProductoFormData) => {
+      try {
+        await api.createProducto(productoData);
+        navigate('/productos');
+      } catch (error) {
+        console.error('Error al crear producto:', error);
       }
-    } catch (error) {
-      console.error('Error al actualizar producto:', error);
-    }
-  };
+    };
 
-  return (
-    <Router>
+    const handleUpdateProductoWithNavigate = async (productoData: ProductoFormData) => {
+      try {
+        const id = window.location.pathname.split('/').pop();
+        if (id) {
+          await api.updateProducto(id, productoData);
+          navigate('/productos');
+        }
+      } catch (error) {
+        console.error('Error al actualizar producto:', error);
+      }
+    };
+
+    return (
       <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
         <Navigation darkMode={darkMode} />
         
@@ -72,7 +77,9 @@ function App() {
             </div>
           ) : (
             <Routes>
-              <Route path="/" element={<Navigate to="/productos" replace />} />
+              <Route path="/" element={<Navigate to="/inventario" replace />} />
+              <Route path="/inventario" element={<InventarioView darkMode={darkMode} />} />
+              <Route path="/rack/:id" element={<RackView darkMode={darkMode} />} />
               <Route path="/productos" element={<ListaProductos darkMode={darkMode} />} />
               <Route 
                 path="/productos/nuevo" 
@@ -81,7 +88,7 @@ function App() {
                     darkMode={darkMode} 
                     isNew={true} 
                     racks={racks}
-                    onSubmit={handleCreateProducto}
+                    onSubmit={handleCreateProductoWithNavigate}
                   />
                 } 
               />
@@ -92,15 +99,22 @@ function App() {
                     darkMode={darkMode} 
                     isNew={false} 
                     racks={racks}
-                    onSubmit={handleUpdateProducto}
+                    onSubmit={handleUpdateProductoWithNavigate}
                   />
                 } 
               />
+              <Route path="/estaciones" element={<GestionEstaciones darkMode={darkMode} />} />
               <Route path="/bodegas" element={<GestionBodegas darkMode={darkMode} />} />
             </Routes>
           )}
         </main>
       </div>
+    );
+  };
+
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
