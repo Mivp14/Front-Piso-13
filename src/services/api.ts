@@ -1,6 +1,27 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// Agregar interceptor para logs
+axios.interceptors.request.use(request => {
+  console.log('Realizando petición a:', request.url);
+  return request;
+});
+
+axios.interceptors.response.use(
+  response => {
+    console.log('Respuesta recibida:', response.status, response.data);
+    return response;
+  },
+  error => {
+    console.error('Error en la petición:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    return Promise.reject(error);
+  }
+);
 
 export interface Rack {
   _id: string;
@@ -49,24 +70,8 @@ export interface ProductoFormData {
 export const api = {
   // Operaciones de Productos
   getProductos: async (): Promise<Producto[]> => {
-    try {
-      // Intentar primero con /api/productos
-      console.log('Intentando obtener productos desde:', `${API_URL}/api/productos`);
-      const response = await axios.get(`${API_URL}/api/productos`);
-      console.log('Respuesta recibida:', response);
-      return response.data;
-    } catch (error) {
-      console.error('Error al obtener productos:', error);
-      if (axios.isAxiosError(error)) {
-        console.error('Detalles del error:', {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          headers: error.response?.headers
-        });
-      }
-      throw error;
-    }
+    const response = await axios.get(`${API_URL}/productos`);
+    return response.data;
   },
 
   getProducto: async (id: string): Promise<Producto> => {
