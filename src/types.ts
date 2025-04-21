@@ -4,7 +4,6 @@ export interface Producto {
   descripcion: string;
   cantidad: number;
   precio: number;
-  ubicacion: string;
   categoria: string;
   rack: string;
   createdAt: string;
@@ -16,7 +15,6 @@ export interface ProductoFormData {
   descripcion: string;
   cantidad: number;
   precio: number;
-  ubicacion: string;
   categoria: string;
   rack: string;
 }
@@ -26,6 +24,8 @@ export interface Rack {
   nombre: string;
   descripcion?: string;
   ubicacion?: string;
+  categorias: string[];
+  bodega: string;
   createdAt?: string;
   updatedAt?: string;
 }
