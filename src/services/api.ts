@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export interface Rack {
   _id: string;
@@ -37,41 +37,41 @@ export interface ProductoFormData {
 export const api = {
   // Operaciones de Productos
   getProductos: async (): Promise<Producto[]> => {
-    const response = await axios.get(`${API_URL}/products`);
+    const response = await axios.get(`${API_URL}/api/products`);
     return response.data;
   },
 
   createProducto: async (producto: ProductoFormData): Promise<Producto> => {
-    const response = await axios.post(`${API_URL}/products`, producto);
+    const response = await axios.post(`${API_URL}/api/products`, producto);
     return response.data;
   },
 
   updateProducto: async (id: string, producto: ProductoFormData): Promise<Producto> => {
-    const response = await axios.put(`${API_URL}/products/${id}`, producto);
+    const response = await axios.put(`${API_URL}/api/products/${id}`, producto);
     return response.data;
   },
 
   deleteProducto: async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/products/${id}`);
+    await axios.delete(`${API_URL}/api/products/${id}`);
   },
 
   // Operaciones de Racks
   getRacks: async (): Promise<Rack[]> => {
-    const response = await axios.get(`${API_URL}/racks`);
+    const response = await axios.get(`${API_URL}/api/racks`);
     return response.data;
   },
 
   createRack: async (rack: Omit<Rack, '_id' | 'createdAt' | 'updatedAt'>): Promise<Rack> => {
-    const response = await axios.post(`${API_URL}/racks`, rack);
+    const response = await axios.post(`${API_URL}/api/racks`, rack);
     return response.data;
   },
 
   updateRack: async (id: string, rack: Partial<Rack>): Promise<Rack> => {
-    const response = await axios.put(`${API_URL}/racks/${id}`, rack);
+    const response = await axios.put(`${API_URL}/api/racks/${id}`, rack);
     return response.data;
   },
 
   deleteRack: async (id: string): Promise<void> => {
-    await axios.delete(`${API_URL}/racks/${id}`);
+    await axios.delete(`${API_URL}/api/racks/${id}`);
   }
-}; 
+};
