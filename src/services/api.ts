@@ -49,8 +49,23 @@ export interface ProductoFormData {
 export const api = {
   // Operaciones de Productos
   getProductos: async (): Promise<Producto[]> => {
-    const response = await axios.get(`${API_URL}/productos`);
-    return response.data;
+    try {
+      console.log('Intentando obtener productos desde:', `${API_URL}/productos`);
+      const response = await axios.get(`${API_URL}/productos`);
+      console.log('Respuesta recibida:', response);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener productos:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Detalles del error:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          headers: error.response?.headers
+        });
+      }
+      throw error;
+    }
   },
 
   getProducto: async (id: string): Promise<Producto> => {
