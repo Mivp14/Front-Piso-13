@@ -5,10 +5,10 @@ const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replac
 
 // Configuración de rutas
 const ROUTES = {
-  productos: '/products',
-  racks: '/racks',
-  bodegas: '/bodegas',
-  estaciones: '/estaciones'
+  productos: '/api/products',
+  racks: '/api/racks',
+  bodegas: '/api/bodegas',
+  estaciones: '/api/estaciones'
 };
 
 // Agregar interceptor para logs
