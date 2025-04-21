@@ -50,8 +50,9 @@ export const api = {
   // Operaciones de Productos
   getProductos: async (): Promise<Producto[]> => {
     try {
-      console.log('Intentando obtener productos desde:', `${API_URL}/productos`);
-      const response = await axios.get(`${API_URL}/productos`);
+      // Intentar primero con /api/productos
+      console.log('Intentando obtener productos desde:', `${API_URL}/api/productos`);
+      const response = await axios.get(`${API_URL}/api/productos`);
       console.log('Respuesta recibida:', response);
       return response.data;
     } catch (error) {
