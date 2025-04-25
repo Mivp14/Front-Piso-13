@@ -13,13 +13,11 @@ const ROUTES = {
 
 // Agregar interceptor para logs
 axios.interceptors.request.use(request => {
-  console.log('Realizando petición a:', request.url);
   return request;
 });
 
 axios.interceptors.response.use(
   response => {
-    console.log('Respuesta recibida:', response.status, response.data);
     return response;
   },
   error => {
