@@ -183,7 +183,6 @@ export const GestionBodegas: React.FC<GestionBodegasProps> = ({ darkMode }) => {
       racks: []
     });
     setBodegaEnEdicion(null);
-    setMostrarFormulario(false);
   };
 
   const handleCancel = () => {
